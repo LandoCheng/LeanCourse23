@@ -5,21 +5,24 @@ set_option linter.unusedVariables false
 local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 
-/- # Today: Numbers and induction
+
+/- ## Today: Numbers and induction
 
 We cover chapter 5 from Mathematics in Lean, and some material about `norm_cast`/`push_cast`
 that is not covered in MiL. -/
 
 /-
-Last time we discussed sets:
+we will discuss sets:
 * Set-builder notation: `{ x : X | p x}`;
 * Unions/intersections: `⋃ i : ι, C i`, `⋃ i ∈ s, C i` or `⋃₀ C`;
 * Images and preimages: `f ⁻¹' s` or `f '' s`;
 
-We also defined the inverse of a function.
+We will also define the inverse of a function.
 -/
 
-/- # Recursion and induction
+
+
+/- # I.Recursion and induction
 
 Let's start by defining our own factorial function.
 Note that there is no `:=` -/
@@ -28,13 +31,15 @@ def fac : ℕ → ℕ
   | 0 => 1
   | n + 1 => (n + 1) * fac n
 
-lemma fac_zero : fac 0 = 1 := by sorry
+lemma fac_zero : fac 0 = 1 := by rfl
+lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by rfl
+example : fac 4 = 24 := by rfl
 
-lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by sorry
+theorem fac_pos (n : ℕ) : 0 < fac n := by {
+  induction n
 
-example : fac 4 = 24 := by sorry
-
-theorem fac_pos (n : ℕ) : 0 < fac n := by sorry
+}
+-- define recursively and prove inductively
 
 /-
 Two useful tactics:
@@ -43,6 +48,7 @@ Two useful tactics:
 -/
 
 theorem pow_two_le_fac (n : ℕ) : 2 ^ n ≤ fac (n + 1) := by sorry
+
 
 
 open BigOperators Finset
@@ -64,11 +70,6 @@ This makes it harder to prove things about it, so we generally avoid using it
 
 theorem sum_id (n : ℕ) : (∑ i in range (n + 1), i) = n * (n + 1) / 2 := by sorry
 
-
-
-
-
-
 /- When using division, it is better to do the calculation in the rationals or reals.
 Note that we write `(... : ℚ)` in the left hand side to *coerce* the value to the rationals.
 In the infoview (right half of your screen), these coercions are denoted with `↑`.
@@ -86,27 +87,54 @@ since `↑n - ↑m = ↑(n - m)` and `↑n / ↑m = ↑(n / m)` are not always t
 example : (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by sorry
 
 
+/- # Exercises -/
 
 /- Let's define the Fibonacci sequence -/
-
 def fib : ℕ → ℕ
   | 0 => 0
   | 1 => 1
   | (n + 2) => fib (n + 1) + fib n
 
-/- ## Exercises -/
+example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw [sum_range_succ,ih,mul_add,mul_one,add_comm]
+    rfl
+}
 
-example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by sorry
+example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw [sum_range_succ,ih,← add_sub_right_comm,sub_left_inj]
+    rfl
+}
 
-example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by sorry
+example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw [sum_range_succ,mul_add,ih]
+    ring
+}
 
-example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by sorry
+example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw [sum_range_succ,ih]
+    push_cast
+    ring
+}
 
-example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by sorry
-
-example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by sorry
-
-
+example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw [mul_add,mul_one,fac,fac,ih]
+    ring
+}
 
 
 
@@ -151,6 +179,7 @@ example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by sorry
 example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by sorry
 
 example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by sorry
+-- hn is necessary here
 
 /- We can also induct on various other inductively defined types.
 

@@ -4,29 +4,9 @@ noncomputable section
 set_option linter.unusedVariables false
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/- # Example -/
 
 /-
-# Example
-
 A sequence `u` of numbers converges to a number `l` if
 `∀ ε > 0, ∃ N, ∀ n ≥ N, |u_n - l| < ε`
 and a function `f : ℝ → ℝ` is continuous at `x₀` if
@@ -35,6 +15,7 @@ and a function `f : ℝ → ℝ` is continuous at `x₀` if
 Fact: if `f` is continuous at `x₀` and `u` converges to `x₀` then
 `f ∘ u : n ↦ f(u_n)` converges to `f(x₀)`.
 -/
+
 
 
 /-- The sequence `u` of real numbers converges to `l`. -/
@@ -63,14 +44,9 @@ example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ)
 
 
 
+/- # introduction to Lean -/
 
-
-
-
-
-
-
-/-!
+/-
 # How does Lean help you?
 
 * Requires details
@@ -87,20 +63,15 @@ example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ)
 
 Proof assistants software exist since the early 70s.
 
-There is currently a lot of momentum in formalized mathematics. I'm setting up a research group in Bonn on formalized mathematics.
+There is currently a lot of momentum in formalized mathematics. I'm setting up a
+research group in Bonn on formalized mathematics.
 
 Lean exists since 2013, and has a rapidly growing mathematical library since 6 years.
 -/
 
 
+/- # Lean is a calculator and programming language -/
 
-
-
-
-
-
-
-/- Lean is a calculator and programming language -/
 #eval 2 + 3
 
 #eval 2 ^ 3 + 4 * 5 - 6

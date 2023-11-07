@@ -27,18 +27,13 @@ Tactics we saw last time:
 # Practical remarks
 * Reminder: first assignment due 20.10.2023. Upload it to eCampus.
 * To get the latest version of this repository, run `git pull` on the command line.
-* Today we're going to discuss the material of chapters 2.3, 2.4, 2.5 and 3.1
-from Mathematics in Lean
 -/
 
 
 /- Curly braces `{...}` indicate that an argument is implicit. -/
 
-lemma my_lemma {a b c : ℝ} (h : a + b = a + c) : b = c := by exact add_left_cancel h
-
-example {x y z : ℝ} (h : x + 2 = x + (y + z)) :
-    2 = y + z :=
-  my_lemma h
+lemma my_lemma {a b c : ℝ} (h : a + b = a + c) : b = c :=
+  add_left_cancel h
 
 /- {G : Type*} and [Group G] are both implicit arguments -/
 #check mul_right_inv
@@ -55,32 +50,15 @@ variable (a b c d x y z : ℝ)
 
 /- We can apply these lemmas manually, or use the `rfl`/`trans`/`calc` tactics. -/
 
-example (x : ℝ) : x ≤ x := by exact le_refl x
-example (x : ℝ) : x ≤ x := by apply le_refl
-example (x : ℝ) : x ≤ x := by rfl
+example (x : ℝ) : x ≤ x := by sorry
 
 
 
-example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
-  apply le_trans
-  · exact h₀
-  · exact h₁
-
-example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by {
-  trans y
-  · assumption
-  · assumption
-}
+example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by sorry
 
 
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
-  calc a
-      ≤ b := h₀
-    _ < c := h₁
-    _ ≤ d := h₂
-    _ < e := h₃
 
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by linarith
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by sorry
 
 
 /- mathlib has lemmas that all common operations are monotone. Here are a few examples. -/
@@ -88,9 +66,6 @@ example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e 
 #check (add_le_add : a ≤ b → c ≤ d → a + c ≤ b + d)
 #check (mul_le_mul : a ≤ b → c ≤ d → 0 ≤ c → 0 ≤ b → a * c ≤ b * d)
 #check exp_le_exp
-
-#check (exp_le_exp.1 : exp a ≤ exp b → a ≤ b)
-#check (exp_le_exp.2 : a ≤ b → exp a ≤ exp b)
 
 /-
 To use an "if and only if" statement `h`, you can use any of the following
@@ -100,56 +75,31 @@ To use an "if and only if" statement `h`, you can use any of the following
 - `rw [← h]`
 -/
 
-example (h : a ≤ b) : exp a ≤ exp b := by
-  apply exp_le_exp.2
-  exact h
-
-example (h : a ≤ b) : exp a ≤ exp b := by
-  rw [exp_le_exp]
-  exact h
+example (h : a ≤ b) : exp a ≤ exp b := by sorry
 
 
 
 
 
-example (h : exp a ≤ exp b) : a ≤ b := by
-  apply exp_le_exp.1
-  exact h
-
-example (h : exp a ≤ exp b) : a ≤ b := by
-  rw [exp_le_exp] at h
-  exact h
-
+example (h : exp a ≤ exp b) : a ≤ b := by sorry
 
 
 /- `gcongr` is very convenient for monotonicity of functions. -/
 
-example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by
-  gcongr
-  exact le_trans h h2
-
-
-example (h : a ≤ b) : c - exp b ≤ c - exp a := by
-  gcongr
+example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by sorry
 
 
 
-example (h : a ≤ b) (h2 : b < c) (h3 : x ≤ y) : a + x ≤ c + y := by {
-  gcongr
-  apply le_of_lt
-  calc a
-     ≤ b := h
-   _ < c := h2
-  -- linarith
-}
+example (h : a ≤ b) : c - exp b ≤ c - exp a := by sorry
+
+
+
+example (h : a ≤ b) (h2 : b < c) (h3 : x ≤ y) : a + x ≤ c + y := by sorry
 
 
 /- Remark: for equalities, you should use `congr` instead of `gcongr` -/
 
-example (h : a = b) : c - exp b = c - exp a := by
-  congr
-  symm
-  exact h
+example (h : a = b) : c - exp b = c - exp a := by sorry
 
 
 
@@ -176,14 +126,7 @@ example (h : a = b) : c - exp b = c - exp a := by
 * If you right-click on a definition or theorem in VS Code, the editor will show a menu with the option to jump to the file where the theorem is proven, and you can find similar theorems nearby.
 -/
 
-
-
-example (h : a < b) (h3 : x ≤ y) : a + exp x < b + exp y := by {
-  apply add_lt_add_of_lt_of_le
-  · assumption
-  · gcongr
-
-}
+example (h : a < b) (h3 : x ≤ y) : a + exp x < b + exp y := by sorry
 
 
 
@@ -191,31 +134,17 @@ example (h : a < b) (h3 : x ≤ y) : a + exp x < b + exp y := by {
 /- Divisibility also gives an order. Warning: divisibility uses a unicode character,
 which can be written using `\|`. -/
 
-example (n m k : ℕ) (h₀ : n ∣ m) (h₁ : m ∣ k) : n ∣ k := by {
-  trans m
-  · assumption
-  · assumption
-}
+example (n m k : ℕ) (h₀ : n ∣ m) (h₁ : m ∣ k) : n ∣ k := by sorry
 
-example (n m k : ℕ) : m ∣ n * m * k := by {
-  apply dvd_mul_of_dvd_left
-  apply dvd_mul_left
-}
+
+example (n m k : ℕ) : m ∣ n * m * k := by sorry
 
 
 
 /- We can prove if and only if statements using `constructor`.
   Afterwards we have to prove both implications. -/
 
-example : a + b ≤ c ↔ a ≤ c - b := by {
-  constructor
-  · intro h
-    apply le_sub_left_of_add_le
-    rw [add_comm]
-    exact h
-  · intro h
-    exact le_sub_iff_add_le.mp h
-}
+example : a + b ≤ c ↔ a ≤ c - b := by sorry
 
 
 

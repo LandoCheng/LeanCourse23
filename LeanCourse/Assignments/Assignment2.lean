@@ -19,8 +19,26 @@ open Nat
 -/
 
 lemma exercise2_1 {α : Type*} {p q : α → Prop} :
-    (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := by
-  sorry
+    (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := by {
+      constructor
+      · intro h₁
+        obtain ⟨ x₀,h₂⟩ := h₁
+        obtain hp|hq := h₂
+        · left
+          use x₀
+        · right
+          use x₀
+      · intro h₁
+        obtain hp|hq := h₁
+        · obtain ⟨x₀,hp₀⟩ := hp
+          use x₀
+          left
+          exact hp₀
+        · obtain ⟨x₀,hq₀⟩ := hq
+          use x₀
+          right
+          exact hq₀
+    }
 
 section Surjectivity
 
@@ -35,19 +53,43 @@ variable {f g : ℝ → ℝ} {x : ℝ}
   `simp` is a very useful tactic that can simplify many expressions. -/
 example : (g ∘ f) x = g (f x) := by simp
 
-lemma exercise2_2 (h : SurjectiveFunction (g ∘ f)) : SurjectiveFunction g := by
-  sorry
+lemma exercise2_2 (h : SurjectiveFunction (g ∘ f)) : SurjectiveFunction g := by {
+  intro y
+  specialize h y
+  obtain ⟨x₀,h₀⟩ := h
+  simp at h₀
+  use f x₀
+}
 
 /- Hint: you are allowed to use the previous exercise in this exercise! -/
 lemma exercise2_3 (hf : SurjectiveFunction f) :
-    SurjectiveFunction (g ∘ f) ↔ SurjectiveFunction g := by
-  sorry
+    SurjectiveFunction (g ∘ f) ↔ SurjectiveFunction g := by {
+  constructor
+  · intro hc
+    apply exercise2_2 hc
+  · intro h
+    intro z
+    specialize h z
+    obtain ⟨y,h₁⟩ := h
+    specialize hf y
+    obtain ⟨x,h₂⟩ := hf
+    rw [← h₂] at h₁
+    simp
+    use x
+}
 
 /- Composing a surjective function by a linear function to the left and the right will still result
 in a surjective function. The `ring` tactic will be very useful here! -/
 lemma exercise2_4 (hf : SurjectiveFunction f) :
-    SurjectiveFunction (fun x ↦ 2 * f (3 * (x + 4)) + 1) := by
-  sorry
+    SurjectiveFunction (fun x ↦ 2 * f (3 * (x + 4)) + 1) := by {
+  intro z
+  specialize hf ((z-1)/2)
+  obtain ⟨y,h₁⟩ := hf
+  use ((y/3)-4)
+  ring
+  rw [h₁]
+  ring
+}
 
 end Surjectivity
 
@@ -68,8 +110,13 @@ variable {s t : ℕ → ℕ} {k : ℕ}
   Furthermore, `gcongr` will be helpful! -/
 example : (fun n ↦ n * s n) k = k * s k := by simp
 
-lemma exercise2_5 : EventuallyGrowsFaster (fun n ↦ n * s n) s := by
-  sorry
+lemma exercise2_5 : EventuallyGrowsFaster (fun n ↦ n * s n) s := by {
+  intro k
+  use k
+  intro n h₀
+  simp
+  gcongr
+}
 
 /- For the following exercise, it will be useful to know that you can write `max a b`
   to take the maximum of `a` and `b`, and that this lemma holds  -/
@@ -77,14 +124,27 @@ lemma useful_fact (a b c : ℕ) : c ≥ max a b ↔ c ≥ a ∧ c ≥ b := by si
 
 lemma exercise2_6 {s₁ s₂ t₁ t₂ : ℕ → ℕ}
     (h₁ : EventuallyGrowsFaster s₁ t₁) (h₂ : EventuallyGrowsFaster s₂ t₂) :
-    EventuallyGrowsFaster (s₁ + s₂) (t₁ + t₂) := by
-  sorry
+    EventuallyGrowsFaster (s₁ + s₂) (t₁ + t₂) := by {
+  intro k
+  specialize h₁ k
+  obtain ⟨N₁,pre₁⟩ := h₁
+  specialize h₂ k
+  obtain ⟨N₂,pre₂⟩ := h₂
+  use max N₁ N₂
+  intro n h
+  simp at h
+  specialize pre₁ n h.1
+  specialize pre₂ n h.2
+  simp
+  rw [mul_add]
+  gcongr
+}
 
 
 /- Optional hard exercise 1:
 Find a function that is nowhere zero and grows faster than itself when shifted by one. -/
 lemma exercise2_7 : ∃ (s : ℕ → ℕ), EventuallyGrowsFaster (fun n ↦ s (n+1)) s ∧ ∀ n, s n ≠ 0 := by
-  sorry
+sorry
 
 
 /- Optional hard exercise 2:
@@ -105,7 +165,6 @@ lemma exercise2_8 (hs : EventuallyGrowsFaster (fun n ↦ s (n+1)) s) (h2s : ∀ 
     intro n
     exact?
   sorry
-
 
 
 end Growth

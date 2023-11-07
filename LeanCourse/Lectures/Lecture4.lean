@@ -21,11 +21,11 @@ To deal with orders, we can
 
 /- # Today: Logic
 
-We cover sections 3.1, 3.2, 3.4 and 3.5 from Mathematics in Lean. -/
+We cover sections 3.1, 3.2, 3.4 and 3.5 from Mathematics in Lean.
 
-/-
 We will go over the quantifiers `∀` (for all) and `∃` (exists), and the connectives
-`∧` (and), `∨` (or), `→` (implies), `↔` (if and only if) and `¬` (not).
+`∧` (and), `∨` (or), `→` (implies), `↔` (if and only if).
+For each of these we will see how to prove them, and how to use an assumption that states this.
 -/
 
 
@@ -196,17 +196,37 @@ example {α : Type*} {p q : α → Prop} (h : ∀ x, p x → q x) :
   intro ⟨x, hx⟩
   use x
   exact h x hx
-
-
 }
 
 
 example {α : Type*} {p : α → Prop} {r : Prop} :
-    ((∃ x, p x) → r) ↔ (∀ x, p x → r) := by sorry
+    ((∃ x, p x) → r) ↔ (∀ x, p x → r) := by {
+  constructor
+  · intro he
+    intro x hp
+    apply he
+    use x
+  · intro hu he
+    obtain ⟨x,hp⟩ := he
+    specialize hu x hp
+    exact hu
+}
 
 
 example {α : Type*} {p : α → Prop} {r : Prop} :
-    (∃ x, p x ∧ r) ↔ ((∃ x, p x) ∧ r) := by sorry
+    (∃ x, p x ∧ r) ↔ ((∃ x, p x) ∧ r) := by {
+  constructor
+  · intro he
+    obtain ⟨x₀,hx₀⟩ := he
+    constructor
+    · use x₀
+      exact hx₀.1
+    · exact hx₀.2
+  · intro he
+    obtain ⟨hl,hr⟩ :=he
+    obtain ⟨x₀,hx₀⟩ :=hl
+    use x₀
+}
 
 
 

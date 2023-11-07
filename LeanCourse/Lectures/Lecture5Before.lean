@@ -85,14 +85,34 @@ lemma sequentialLimit_unique (u : ℕ → ℝ) (l l' : ℝ) :
 
 /- Prove the following without using `push_neg` or lemmas from the library.
 You will need to use `by_contra` in the proof. -/
-example {α : Type*} (p : α → Prop) : (∃ x, p x) ↔ (¬ ∀ x, ¬ p x) := by sorry
+example {α : Type*} (p : α → Prop) : (∃ x, p x) ↔ (¬ ∀ x, ¬ p x) := by
+  constructor
+  ·intro h h1
+   obtain⟨x,hp⟩ :=h
+   specialize h1 x
+   contradiction
+  ·push_neg
+   intro h
+   exact h
 
-lemma convergesTo_const (a : ℝ) : SequentialLimit (fun n : ℕ ↦ a) a := by sorry
+lemma convergesTo_const (a : ℝ) : SequentialLimit (fun n : ℕ ↦ a) a := by
+  rw [SequentialLimit]
+  rw [sub_self]
+  rw [abs_zero]
+  intro h h1
+  use 1
+  intro n h2
+  exact h1
+
 
 /- The next exercise is harder, and you will probably not finish it during class. -/
 lemma SequentialLimit.add {s t : ℕ → ℝ} {a b : ℝ}
     (hs : SequentialLimit s a) (ht : SequentialLimit t b) :
-    SequentialLimit (fun n ↦ s n + t n) (a + b) := by sorry
+    intro ε h1
+    have h2: ε/2>0 := by app
+    rw [SequentialLimit] at hs ht
+    specialize hs ε h1
+
 
 
 

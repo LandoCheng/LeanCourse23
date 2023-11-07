@@ -37,6 +37,7 @@ Structures are used to build data and properties together.
 For example in the structure below `Point` bundles three coordinates together.
 -/
 
+-- [ext] is important to use "ext" in the following example
 @[ext] structure Point where
   x : ℝ
   y : ℝ
@@ -96,7 +97,7 @@ def myPoint3 : Point where
 def myPoint4 : Point := ⟨1, 2, 3⟩
 
 def myPoint5 := Point.mk 1 2 3
-
+-- "mk" stands for "make"
 
 
 namespace Point
@@ -184,7 +185,7 @@ def PointPoint'.add (a b : PosPoint') : PosPoint' :=
   x_pos := by dsimp; linarith [a.x_pos, b.x_pos]
   y_pos := by dsimp; linarith [a.y_pos, b.y_pos]
   z_pos := by dsimp; linarith [a.z_pos, b.z_pos] }
-
+-- dsimp : to simplify just by definitions
 /- We could also define a type like this using a subtype. It's notation is very similar to sets,
 but written as `{x : α // p x}` instead of `{x : α | p x}`. -/
 
@@ -389,24 +390,56 @@ example (x : ℝ) : x * 1 = x := mul_one x
 #check AddMonoid
 
 
+/-
+def add (a b : Point) : Point :=
+⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
-
-
+def add' : Point → Point → Point :=
+fun ⟨ux, uy, uz⟩ ⟨vx, vy, vz⟩ ↦ ⟨ux + vx, uy + vy, uz + vz⟩
+-/
 
 
 
 
 /- ## Exercises -/
 
-/- 1. Define the structure of "strict bipointed types", i.e. a type together with 2 unequal points
-`x₀ ≠ x₁` in it.
-Then state and prove the lemma that for any object in this class we have `∀ z, z ≠ x₀ ∨ z ≠ x₁.` -/
+/- 1. Define the structure of "strict bipointed types",
+i.e. a type together with 2 unequal points `x₀ ≠ x₁` in it.
+Then state and prove the lemma that for any object in this class we have `∀ z, z ≠ x₀ ∨ z ≠ x₁.`-/
 
+@[ext] structure StrictBipointed (α : Type*) where
+  x : α
+  y : α
+  Unequ : x ≠ y
 
+lemma StrictBipointed.Or_neq (α : Type) (A : StrictBipointed α) (z : α) :
+    z ≠ A.x ∨ z ≠ A.y := by
+{
+  by_contra hn
+  push_neg at hn
+  obtain ⟨hn1,hn2⟩ := hn
+  rw [hn1] at hn2
+  have hp : A.x ≠ A.y := by exact A.Unequ
+  contradiction
+}
 
 /- 2. Define scalar multiplication of a real number and a `Point`.
 Also define scalar multiplication of a positive real number and a `PosPoint`. -/
 
+namespace Point
+
+def ScalMul (k : ℝ) (a : Point) : Point :=
+⟨ k * a.x, k * a.y, k * a.z ⟩
+
+def PosPoint.ScalMul (k : ℝ) (hk : 0 < k) (a : PosPoint) : PosPoint :=
+{
+  x := k * a.x
+  y := k * a.y
+  z := k * a.z
+  x_pos := by linarith [ hk , a.x_pos]
+  y_pos := by linarith [ hk , a.y_pos]
+  z_pos := by linarith [ hk , a.z_pos]
+}
 
 
 /- 3. Define Pythagorean triples, i.e. triples `a b c : ℕ` with `a^2 + b^2 = c^2`.
