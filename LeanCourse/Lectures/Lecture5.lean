@@ -211,7 +211,7 @@ But in Lean, all sets have to be sets of elements from a specific type.-/
 /-
 2.1 to type some common set operations -/
 
-variable {α β ι : Type*} (x : α) (s t : Set α)
+variable {α β ι : Type*} (x : α) (s t u : Set α)
 
 #check x ∈ s       -- \in or \mem
 #check x ∉ s       -- \notin
