@@ -8,13 +8,10 @@ set_option linter.unusedVariables false
 local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 
-/- # Today: Differential Calculus
+/- ## Today: Differential Calculus
 
 We cover chapter 10 from Mathematics in Lean. -/
 
-/-
-Last time we discussed topology.
--/
 
 
 /- We write `deriv` to compute the derivative of a function.
@@ -231,15 +228,34 @@ end NormedSpace
 example (x : ℝ) :
     deriv (fun x ↦ Real.exp (x ^ 2)) x = 2 * x * Real.exp (x ^ 2) := by sorry
 
-/- If you have a continuous injective function `ℝ → ℝ` then `f` is monotone or antitone. This is a possible first step in proving that result.
+/- If you have a continuous injective function `ℝ → ℝ` then `f` is monotone or antitone.
+This is a possible first step in proving that result.
 Prove this by contradiction using the intermediate value theorem. -/
 example {f : ℝ → ℝ} (hf : Continuous f) (h2f : Injective f) {a b x : ℝ}
-    (hab : a ≤ b) (h2ab : f a < f b) (hx : x ∈ Icc a b) : f a ≤ f x := by sorry
+    (hab : a ≤ b) (h2ab : f a < f b) (hx : x ∈ Icc a b) : f a ≤ f x := by {
+  by_contra hp
+  push_neg at hp
+  have h2 : ∃ x₀ ∈ Ioo x b, f x₀ = f a := by {
+    apply intermediate_value_Ioo
+    · simp at hx
+      exact hx.2
+    · exact Continuous.continuousOn hf
+    · simp
+      constructor
+      exact hp
+      assumption
+  }
+  obtain ⟨x₀,hx₀⟩ := h2
+  have hx₀1 :  x₀=a := by
+
+}
 
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {n : ℕ∞} in
+
+
 /- In this exercise you should combine the right lemmas from the library, in particular `IsBoundedBilinearMap.contDiff`. -/
 example (L : E →L[𝕜] E →L[𝕜] E) (f g : E → E) (hf : ContDiff 𝕜 n f)
     (hg : ContDiff 𝕜 n g) :

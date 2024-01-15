@@ -319,3 +319,18 @@ example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by
 example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by norm_cast
 
 example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by norm_cast
+
+
+
+
+/- Warning: sometimes you have to use `clear` to get rid of hypotheses when doing induction. -/
+example (hn : 2 ∣ n) :
+    (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by {
+  clear hn
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [sum_range_succ, ih]
+    push_cast
+    ring
+}

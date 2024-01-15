@@ -6,37 +6,21 @@ local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 variable {n : ℕ}
 
 
-/- # Today: Structures and Classes
+/- ## Today: Structures and Classes
 
 We cover chapter 6 from Mathematics in Lean. -/
 
-/-
-Last time we discussed natural numbers, induction, and casts.
--/
-
-/- Warning: sometimes you have to use `clear` to get rid of hypotheses when doing induction. -/
-example (hn : 2 ∣ n) :
-    (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by
-  clear hn
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_range_succ, ih]
-    push_cast
-    ring
 
 
-
-/- New homework assignment will be posted this afternoon. -/
-
-/-
-# Structures and classes
+/- # I.Structures
 
 Learning about structures is the next step towards doing sophisticated mathematics.
+Structures are used to build data and properties together.-/
 
-Structures are used to build data and properties together.
-For example in the structure below `Point` bundles three coordinates together.
--/
+
+
+/- # 1.1 to define structure
+For example in the structure below `Point` bundles three coordinates together.-/
 
 @[ext] structure Point where
   x : ℝ
@@ -46,11 +30,9 @@ For example in the structure below `Point` bundles three coordinates together.
 #check Point
 
 
-
-
+/- Given a point, we get access to its coordinates / projections. -/
 section
 
-/- Given a point, we get access to its coordinates / projections. -/
 variable (a : Point)
 #check a.x
 #check a.y
@@ -60,9 +42,6 @@ variable (a : Point)
 example : a.x = Point.x a := rfl
 
 end
-
-
-
 
 
 /- We can prove that two points are equal using the `ext` tactic. -/
@@ -78,7 +57,11 @@ example (a b : Point) (hx : a.x = b.x) (hy : a.y = b.y) (hz : a.z = b.z) :
 #check Point.ext
 #check Point.ext_iff
 
-/- There are multiple ways to define a point (or more generally an instance of a structure).
+
+
+/- # 1.2 to specialize structure and define operations on structure
+
+There are multiple ways to define a point (or more generally an instance of a structure).
 
 Tip: if you write `_` for a Point, a lightbulb 💡 will appear.
 Clicking it will give you the skeleton -/
@@ -103,10 +86,9 @@ def myPoint4 : Point := ⟨1, 2, 3⟩
 def myPoint5 := Point.mk 1 2 3
 
 
+/- We can define operations on points, like addition. -/
 
 namespace Point
-
-/- We can define operations on points, like addition. -/
 
 def add (a b : Point) : Point where
   x := a.x + b.x
@@ -119,8 +101,10 @@ fun ⟨ux, uy, uz⟩ ⟨vx, vy, vz⟩ ↦ ⟨ux + vx, uy + vy, uz + vz⟩
 def add'' : Point → Point → Point
   | ⟨ux, uy, uz⟩, ⟨vx, vy, vz⟩ => ⟨ux + vx, uy + vy, uz + vz⟩
 
-/- We define these operations in `namespace Point`. This means that if this namespace is open
-we can write `add p q`, but if the namespace isn't open, we have to write `Point.add p q`.
+/- We define these operations in `namespace Point`.
+This means that if this namespace is open we can write `add p q`,
+but if the namespace isn't open, we have to write `Point.add p q`.
+
 In either case, we can use the *projection notation*, `p.add q` where `p q : Point`.
 Lean knows that we mean the function `Point.add`, since the type of `p` is `Point`. -/
 
@@ -132,6 +116,8 @@ end Point
 #check Point.add myPoint1 myPoint2
 #check myPoint1.add myPoint2
 
+
+/- Lean can figure out overloaded names . -/
 #check Add
 open Point
 
@@ -140,21 +126,25 @@ structure Something where
 
 open Something
 
--- Lean can figure out overloaded names.
 #check add myPoint1 myPoint2
 #check fun x : Something ↦ add x (1 : ℕ) 2
 -- #check add (3 : ℂ)
 
 
+
+/- # 1.3 to prove properties for a structure -/
+
 namespace Point
 
-/- We can prove properties about points. `protected` in the line below means that
+/- We can prove properties about points.
+`protected` in the line below means that
 even in the namespace `Point` we still have to write `Point.add_commutative` -/
 
 protected lemma add_comm (a b : Point) :
   add a b = add b a := by simp [add, add_comm]
 
 #check Point.add_comm
+
 
 /- We can also state that we want to use the `+` notation here.
 In that case, we have to write lemmas stating how `+` computes. -/
@@ -171,9 +161,7 @@ end Point
 
 
 
-
-
-/- We can bundle properties in structures -/
+/- # 1.4 to define inferior structure based on the original structure-/
 
 structure PosPoint where
   x : ℝ
@@ -205,9 +193,12 @@ def PointPoint'.add (a b : PosPoint') : PosPoint' :=
 { a.toPoint + b.toPoint with
   x_pos := by dsimp; linarith [a.x_pos, b.x_pos]
   y_pos := by dsimp; linarith [a.y_pos, b.y_pos]
-  z_pos := by dsimp; linarith [a.z_pos, b.z_pos] }
+  z_pos := by dsimp; linarith [a.z_pos, b.z_pos]
+}
 
-/- We could also define a type like this using a subtype. It's notation is very similar to sets,
+
+/- We could also define a type like this using a subtype.
+It's notation is very similar to sets,
 but written as `{x : α // p x}` instead of `{x : α | p x}`. -/
 
 def PosReal : Type :=
@@ -222,13 +213,12 @@ And it gets ugly when you have more than 2 projections. -/
 example (x : PosReal) : x.1 > 0 := x.2
 
 def PosPoint'' : Type :=
-  { x : ℝ × (ℝ × ℝ) // x.1 > 0 ∧ x.2.1 > 0 ∧ x.2.2 > 0 }
+  { x : ℝ × (ℝ × ℝ) // x.1 > 0 ∧ x.2.1 > 0 ∧ x.2.2 > 0
+}
 
 
 
-
-
-/- Structures can have parameters -/
+/- # 1.5 Structures can have parameters -/
 
 @[ext] structure Triple (α : Type*) where
   x : α
@@ -241,15 +231,15 @@ def PosPoint'' : Type :=
 
 
 
+/- # II.A note on universes
 
-/- # A note on universes
-
-Lean has a hierarchy of universes. -/
+Lean has a hierarchy 分级 of universes. -/
 
 #check ℝ
 #check Type 0
 #check Type 1
 #check Type 2
+
 
 /- You can also work in a variable universe. -/
 
@@ -258,7 +248,10 @@ universe u v
 #check Type (v + 3)
 #check Type (max u v)
 #check fun (α : Type u) (β : Type v) ↦ α → β
--- #check Type (u + v) -- the operations on universes are very limited.
+
+-- #check Type (u + v)
+-- the operations on universes are very limited.
+
 
 /-
 * `Type*` means `Type u` for some new variable `u`
@@ -267,13 +260,14 @@ universe u v
 #check Type*
 #check Type _
 
-
 example : Type (u + 3) = Type _ := rfl
 -- example : Type (u + 3) = Type* := rfl -- error
 
+
 /-
 * `Prop` is a bottom universe below `Type`.
-* `Sort` is used to write "`Prop` or `Type`" -/
+* `Sort` is used to write "`Prop` or `Type`"
+-/
 
 #check Prop
 
@@ -286,10 +280,10 @@ example : Sort _ = Type u := rfl
 
 
 
-/- # Equiv
+/- # III.Equiv
 
 An important structure is equivalences between two types,
-i.e. a bijection (with a chosen inverse).
+   i.e. a bijection (with a chosen inverse).
 This exists in the library as `Equiv α β` or `α ≃ β`.  -/
 
 #check Equiv
@@ -302,10 +296,9 @@ example {α β : Type*} (e : α ≃ β) (y : β) : α := e.symm y
 
 
 
+/- # IV.Classes -/
 
-
-/- # Abelian groups
-Let's define abelians group in Lean. -/
+/- # 4.1 to define Abelian groups by structure -/
 
 structure AbelianGroup where
   G : Type*
@@ -331,18 +324,19 @@ lemma AbelianGroup.zero_add (g : AbelianGroup) (x : g.G) :
     g.add g.zero x = x := by
   rw [g.comm, g.add_zero]
 
-
-
-
 /-
 Issues with this approach:
 * we want a notation for `AbelianGroup.add` and `AbelianGroup.neg`.
 * we want this to be automatically attached to certain concrete type such as `ℕ`, `ℝ`...
 * we want a way to automatically build new examples from old ones
+-/
+
+
+
+/- # 4.2 to define Abelian Group by class
 
 Using `class` instead of `structure` tells Lean to create a database of "instances of this class".
-The `instance` command allows to add entries to this database.
--/
+The `instance` command allows to add entries to this database. -/
 
 class AbelianGroup' (G : Type*) where
   add (x : G) (y : G) : G
@@ -365,18 +359,17 @@ instance : AbelianGroup' ℤ where
 #eval AbelianGroup'.add (2 : ℤ) 5
 
 infixl:70 " +' " => AbelianGroup'.add
-
 #eval (-2) +' 5
 
 notation " 𝟘 " => AbelianGroup'.zero
 
 prefix:max "-'" => AbelianGroup'.neg
 
-/- When you assume you have an object in a certain class, you put them in square brackets
+/-
+When you assume you have an object in a certain class, you put them in square brackets
 (and giving a name to them is optional).
 Such arguments are called instance-implicit arguments,
-Lean will provide them automatically by searching the corresponding database.
--/
+Lean will provide them automatically by searching the corresponding database.-/
 
 #check AbelianGroup'.add
 
@@ -397,8 +390,9 @@ set_option trace.Meta.synthInstance true in
 
 
 
+/- # 4.3 two notions of abelian groups
 
-/- In mathlib, there are two notions of abelian groups,
+In mathlib, there are two notions of abelian groups,
 one written using `(*,1,⁻¹)` and one using `(+, 0, -)`. -/
 
 #check CommGroup
@@ -416,9 +410,6 @@ example (x : ℝ) : x * 1 = x := mul_one x
 
 #check Monoid
 #check AddMonoid
-
-
-
 
 
 
@@ -470,9 +461,7 @@ example (G : Type*) [AbelianGroup' G] : AbelianGroup' (Triple G) := sorry
 
 You can specify *coercions* to say that an element of one type can be silently coerced to an element
 of another type. We've already seen the coercions
-`ℕ → ℤ → ℚ → ℝ → ℂ`
-for numbers.
--/
+`ℕ → ℤ → ℚ → ℝ → ℂ` for numbers. -/
 
 recall PosReal := {x : ℝ // x > 0}
 

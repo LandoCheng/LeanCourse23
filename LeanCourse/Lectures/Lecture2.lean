@@ -38,9 +38,7 @@ example : 2 + 2 = 4 := by rfl
 example : 2 + 2 = 4 := by
   rfl
 
-example : 2 + 2 = 4 := by {
-
-}
+example : 2 + 2 = 4 := by simp
 
 
 
@@ -70,8 +68,8 @@ example : 2 + 2 = 4 := by {
 #check (mul_comm : ∀ a b : ℝ, a * b = b * a)
 
 example (a b c : ℝ) : a * b * c = b * (a * c) := by {
-  rw [mul_comm a, mul_assoc]
-
+  rw [mul_comm a]
+  rw [mul_assoc]
   }
 
 
@@ -124,8 +122,7 @@ example (a b c d : ℝ) (h : c = a*d - 1) (h' : b = a*d) : c = b - 1 := by {
 
 example (a b c d : ℝ) (h : a + c = b*a - d) (h' : d = a*b) : a + c = 0 := by {
   calc a + c
-      = b * a - d := by
-        rw [h]
+      = b * a - d := by rw [h]
     _ = a * b - d := by rw [mul_comm]
     _ = d - d := by rw [← h']
     _ = 0 := by rw [@sub_eq_zero]
@@ -194,7 +191,6 @@ example (p q r : Prop) (h1 : p → q) (h2 : q → r) : p → r := by {
   have h4 : q := h1 h3
   have h5 : r := h2 h4
   exact h5
-
 }
 
 /-
@@ -208,8 +204,8 @@ example (p q r : Prop) (h1 : p → q) (h2 : q → r) : p → r := by {
   apply h2
   apply h1
   assumption
-
 }
+
 variable (f g : ℝ → ℝ)
 #check (Continuous.add : Continuous f → Continuous g → Continuous (f + g))
 example : Continuous (fun x ↦ 2 + x * Real.sin x) := by {
@@ -218,7 +214,6 @@ example : Continuous (fun x ↦ 2 + x * Real.sin x) := by {
   · apply Continuous.mul
     · exact continuous_id
     · exact continuous_sin
-
 }
 
 

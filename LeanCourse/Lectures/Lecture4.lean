@@ -236,10 +236,8 @@ example {α : Type*} {p : α → Prop} {r : Prop} :
 /-
 Lean denotes by `∨` the logical OR operator.
 
-In order to make use of an assumption
-  `h : P ∨ Q`
-we use the obtain tactic:
-  `obtain hP|hQ := h`
+In order to make use of an assumption `h : P ∨ Q`
+we use the obtain tactic: `obtain hP|hQ := h`
 which creates two proof branches: one branch assuming `hP : P`,
 and one branch assuming `hQ : Q`.
 

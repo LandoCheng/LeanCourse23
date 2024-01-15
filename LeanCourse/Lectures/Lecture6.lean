@@ -9,42 +9,13 @@ variable {ι L : Type*}
 
 We cover sections 4.2 and 4.3 from Mathematics in Lean.
 
-<<<<<<< HEAD
 we will discuss sets:
 * Set-builder notation: `{ x : X | p x}`;
 * Unions/intersections: `⋃ i : ι, C i`, `⋃ i ∈ s, C i` or `⋃₀ C`;
 * Images and preimages: `f ⁻¹' s` or `f '' s`;
 We will also define the inverse of a function.-/
-=======
-/-
-Last time we discussed negation `¬` (not), classical logic, sequences and sets.
--/
 
-/- ## Proving two sets are equal
-
-You can prove that two sets are equal by applying `subset_antisymm` or using the `ext` tactic.
--/
-
-
-variable {α β : Type*} (x : α) (s t : Set α)
-
-example : (fun x : ℝ ↦ x ^ 2) 3 = 10 := by
-  simp only; sorry
-
-/- We saw last time that we can prove that two sets are equal using `ext`. -/
-example : s ∩ t = t ∩ s := by
-  ext x
-  simp only [mem_inter_iff, and_comm]
-
-/- We can also use existing lemmas and `calc`. -/
-example : (s ∪ tᶜ) ∩ t = s ∩ t := by
-  calc (s ∪ tᶜ) ∩ t
-      = (s ∩ t) ∪ (tᶜ ∩ t) := by rw [@inter_distrib_right]
-    _ = (s ∩ t) ∪ ∅ := by rw [@compl_inter_self]
-    _ = s ∩ t := by rw [@union_empty]
->>>>>>> 2619d9fd66da03f7b375841a83cdb8370b6d4083
-
-
+variable {α β : Type*} {s t : Set α }
 
 /- # Exercises -/
 
@@ -162,9 +133,7 @@ example (hf : Surjective f) : f ∘ g = id := by
 example (hf : Injective f) : g ∘ f = id := by
   ext x
   simp [inverse]
-  have h : ∀ x y : α, f x = f y ↔ x = y :=
-  · intro x y
-    exact hf.eq_iff
+  have h : ∀ x y : α, f x = f y ↔ x = y := sorry
   apply hf
   simp [invFun_spec]
 

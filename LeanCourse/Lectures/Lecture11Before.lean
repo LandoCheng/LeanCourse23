@@ -7,25 +7,20 @@ set_option linter.unusedVariables false
 local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 
-/- # Today: Topology
+
+/- ## Today: Topology
 
 We cover chapter 9 from Mathematics in Lean. -/
 
-/-
-Last time we discussed abstract algebra.
--/
 
 
-
-
-
-
-
-/- # Limits -/
-
+/- # I.Limits -/
 
 /-
+1.1 why we don't use traditional definition for limit
+
 In topology, one of basic concepts is that of a limit.
+
 Say `f : ℝ → ℝ`. There are many variants of limits.
 * the limit of `f(x)` as `x` tends to `x₀`
 * the limit of `f(x)` as `x` tends to `∞` or `-∞`
@@ -38,50 +33,34 @@ Similarly, the value `f(x)` can have the same behavior:
 
 This gives `64` notions of limits.
 
-When we prove that two limits compose: if
-`f x` tends to `y₀` when `x` tends to `x₀` and
-`g y` tends to `z₀` when `y` tends to `y₀` then
-`(g ∘ f) x` tends to `z₀` when `x` tends to `x₀`.
+When we prove that two limits compose:
+if `f x` tends to `y₀` when `x` tends to `x₀` and `g y` tends to `z₀` when `y` tends to `y₀`
+then `(g ∘ f) x` tends to `z₀` when `x` tends to `x₀`.
 This lemma has 512 variants.
-
 Obviously we don't want to prove this 512 times.
-Solution: use filters.
 
+Solution: use filters.-/
 
-
-
-
-
-
-
-
+/-
+1.2 Filter
 
 If `X` is a type, a filter `F : Filter X` is a
-collection of sets `F.sets : Set (Set X)` satisfying the following:
--/
+collection of subsets `F.sets : Set (Set X)` satisfying the following:-/
+
 section Filter
 
 variable {X Y : Type*} (F : Filter X)
 
 #check (F.sets : Set (Set X))
 #check (F.univ_sets : univ ∈ F.sets)
-#check (F.sets_of_superset : ∀ {U V},
-  U ∈ F.sets → U ⊆ V → V ∈ F.sets)
-#check (F.inter_sets : ∀ {U V},
-  U ∈ F.sets → V ∈ F.sets → U ∩ V ∈ F.sets)
+#check (F.sets_of_superset : ∀ {U V}, U ∈ F.sets → U ⊆ V → V ∈ F.sets)
+#check (F.inter_sets : ∀ {U V}, U ∈ F.sets → V ∈ F.sets → U ∩ V ∈ F.sets)
 end Filter
 
-
-
-
-
-
 /-
-Examples of filters:
--/
+1.3 Examples of filters:
 
-/- `(atTop : Filter ℕ)` is made of sets of `ℕ` containing
-`{n | n ≥ N}` for some `N` -/
+`(atTop : Filter ℕ)` is made of sets of `ℕ` containing `{n | n ≥ N}` for some `N` -/
 #check (atTop : Filter ℕ)
 
 /- `𝓝 x`, made of neighborhoods of `x` in a topological space -/
@@ -91,32 +70,29 @@ Examples of filters:
 #check (volume.ae : Filter (ℝ × ℝ × ℝ))
 
 /-
-It may be useful to think of a filter on a type `X`
-as a generalized element of `Set X`.
+It may be useful to think of a filter on a type `X` as a generalized element of `Set X`.
 * `atTop` is the "set of very large numbers"
 * `𝓝 x₀` is the "set of points very close to `x₀`."
 * For each `s : Set X` we have the so-called *principal filter*
-  `𝓟 s` consisting of all sets that contain `s` (exercise!).
+  `𝓟 s` consisting of all sets that contain `s` (exercise!). -/
+
+variable {X : Type*}
+/-
+*
+*
+*
 -/
 
-
-
-
-
-
-/- Operations on filters -/
+/-
+1.4 Operations on filters -/
 
 /- the *pushforward* of filters generalizes images of sets. -/
-example {X Y : Type*} (f : X → Y) : Filter X → Filter Y :=
-  Filter.map f
-
+example {X Y : Type*} (f : X → Y) : Filter X → Filter Y := Filter.map f
 example {X Y : Type*} (f : X → Y) (F : Filter X) (V : Set Y) :
-    V ∈ Filter.map f F ↔ f ⁻¹' V ∈ F := by
-  rfl
+    V ∈ Filter.map f F ↔ f ⁻¹' V ∈ F := by rfl
 
 /- the *pullback* of filters generalizes preimages -/
-example {X Y : Type*} (f : X → Y) : Filter Y → Filter X :=
-  Filter.comap f
+example {X Y : Type*} (f : X → Y) : Filter Y → Filter X := Filter.comap f
 
 /- These form a *Galois connection* / adjunction -/
 example {X Y : Type*} (f : X → Y) (F : Filter X) (G : Filter Y) :

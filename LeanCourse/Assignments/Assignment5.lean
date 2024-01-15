@@ -23,6 +23,7 @@ local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 -/
 
 
+
 section LinearMap
 
 variable {R M₁ M₂ N : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup N]
@@ -30,16 +31,28 @@ variable {R M₁ M₂ N : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup 
 
 /- Define the coproduct of two linear maps that send (x, y) ↦ f x + g y. -/
 
-def exercise5_1 (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) : M₁ × M₂ →ₗ[R] N := sorry
+def exercise5_1 (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) : M₁ × M₂ →ₗ[R] N where
+  toFun := fun (x, y) ↦ f x + g y
+  map_add' := by
+    simp
+    intro x₁ x₂ y₁ y₂
+    abel
+  map_smul' := by
+    dsimp
+    intro r x
+    simp
+
+
 example (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) (x : M₁) (y : M₂) :
-  exercise5_1 f g (x, y) = f x + g y := sorry -- should be rfl
+  exercise5_1 f g (x, y) = f x + g y := rfl
 
 
 end LinearMap
 
+
+
 section Ring
 variable {R : Type*} [CommRing R]
-
 
 /- Let's define ourselves what it means to be a unit in a ring and then
   prove that the units of a ring form a group.
@@ -50,9 +63,26 @@ variable {R : Type*} [CommRing R]
 
 #check Exists.choose
 #check Exists.choose_spec
+
 def IsAUnit (x : R) : Prop := ∃ y, y * x = 1
 
-instance exercise5_2 : Group {x : R // IsAUnit x} := sorry
+instance exercise5_2 : Group {x : R // IsAUnit x} where
+  mul := fun x y ↦ (↑(x * y) : R)
+  mul_assoc := sorry
+  one := sorry
+  one_mul := sorry
+  mul_one := sorry
+  npow := sorry
+  npow_zero := sorry
+  npow_succ := sorry
+  inv := sorry
+  div := sorry
+  div_eq_mul_inv := sorry
+  zpow := sorry
+  zpow_zero' := sorry
+  zpow_succ' := sorry
+  zpow_neg' := sorry
+  mul_left_inv := sorry
 
 -- you have the correct group structure if this is true by `rfl`
 example (x y : {x : R // IsAUnit x}) : (↑(x * y) : R) = ↑x * ↑y := by sorry
@@ -64,11 +94,13 @@ end Ring
 /- The Frobenius morphism in a field of characteristic p is the map `x ↦ x ^ p`.
 Let's prove that the Frobenius morphism is additive, without using that
 fact from the library. -/
+
 #check CharP.cast_eq_zero_iff
 #check Finset.sum_congr
 variable (p : ℕ) [hp : Fact p.Prime] (K : Type*) [Field K] [CharP K p] in
 open Nat Finset in
-lemma exercise5_3 (x y : K) : (x + y) ^ p = x ^ p + y ^ p := by
+
+lemma exercise5_3 (x y : K) : (x + y) ^ p = x ^ p + y ^ p := by {
   rw [add_pow]
   have h2 : p.Prime := hp.out
   have h3 : 0 < p := h2.pos
@@ -80,12 +112,14 @@ lemma exercise5_3 (x y : K) : (x + y) ^ p = x ^ p + y ^ p := by
     _ =  ∑ i in Ioo 0 p, x ^ i * y ^ (p - i) * 0 := by sorry
     _ = 0 := by sorry
   sorry
+}
+
 
 
 /- Let's prove that if `M →ₗ[R] M` forms a module over `R`, then `R` must be a commutative ring.
   To prove this we have to additionally assume that `M` contains at least two elements, and
-`smul_eq_zero : r • x = 0 ↔ r = 0 ∨ x = 0` (this is given by the `NoZeroSMulDivisors` class).
--/
+`smul_eq_zero : r • x = 0 ↔ r = 0 ∨ x = 0` (this is given by the `NoZeroSMulDivisors` class).-/
+
 #check exists_ne
 lemma exercise5_4 {R M M' : Type*} [Ring R] [AddCommGroup M] [Module R M] [Nontrivial M]
     [NoZeroSMulDivisors R M] [Module R (M →ₗ[R] M)]
