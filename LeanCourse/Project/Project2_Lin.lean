@@ -7,15 +7,18 @@ import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Order.Ideal
 import Mathlib.Data.Polynomial.Basic
 import Mathlib.Data.Nat.Order.Lemmas
+import Mathlib.Tactic.ComputeDegree
 
 
 open Nat.ModEq GaussianInt Zsqrtd Complex Polynomial
 
+set_option maxHeartbeats 300000
+set_option synthInstance.maxHeartbeats 40000
 
-/- # Part 1 : uncomplicated lemmas in the main theorem -/
+/- ## Part 1 : uncomplicated lemmas in the main theorem -/
 
 
--- for any integer x, x² ≡ 0 or 1 [MOD 4]
+-- for any natural number x, x² ≡ 0 or 1 [MOD 4]
 lemma Square_mod_four {x : ℕ} (h : ¬ x ^ 2 ≡ 0 [MOD 4]): x ^ 2 ≡ 1 [MOD 4] := by
 {
   mod_cases hp : (x : ℤ) % 4
@@ -54,7 +57,7 @@ lemma le_two_iff (k : ℕ) : k ≤ 2 ↔ k = 0 ∨ k = 1 ∨ k = 2 := by {
 }
 
 
-variable (p : ℕ) (h : Nat.Prime p)
+variable (p : ℕ) (h : Nat.Prime p) [Fact (Nat.Prime p)]
 local notation "ℤ[i]" => GaussianInt
 
 
@@ -98,86 +101,145 @@ lemma negone_le_zero : -1 ≤ 0 := by simp
 
 
 
-/- # Part 2 : 𝔽ₚ[X] ⧸ (X² + 1) ≃+* ℤ[i] ⧸ (p) -/
+/- ## Part 2 : 𝔽ₚ[X] ⧸ (X² + 1) ≃+* ℤ[i] ⧸ (p) -/
 
 
-def tof_1 (x : (ZMod p)) : ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} := x.val
+--Explanation 2
+-- # 𝔽ₚ[X] ≃+* ℤ ⧸ (p) [X]
 
-def tof_1' : RingHom (ZMod p) (ℤ[i] ⧸ Ideal.span {(p : ℤ[i])}) where
-  toFun := (tof_1 p)
-  map_one' := by {
-    rw [tof_1]
-    have hp : ZMod.val (1 : ZMod p) = 1 := by
-      sorry
-    rw [hp]
-    norm_cast
-  }
-  map_mul' := by intro x y; simp; rw [tof_1,tof_1,tof_1]; norm_cast; sorry
-  map_zero' := by simp; rw [tof_1]; simp
-  map_add' := by intro x y; simp; rw [tof_1,tof_1,tof_1]; norm_cast;sorry
+noncomputable def Equiv1 : Polynomial (ZMod p) ≃+* Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) :=
+  Polynomial.mapEquiv (RingEquiv.symm (Int.quotientSpanNatEquivZMod p))
 
---def tof_2 : Polynomial (ZMod p) → (ℤ[i] ⧸ Ideal.span {(p : ℤ[i])}) :=
-  --Polynomial.eval₂ (tof_1' p) (I : (ℤ[i] ⧸ Ideal.span {(p : ℤ[i])}))
+/-
+lemma Equiv2 : Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
+  Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
+  Ideal.span {monomial 2 (1 : ℤ ⧸ Ideal.span {(p : ℤ)}) + C (1 : ℤ ⧸ Ideal.span {(p : ℤ)})} := by sorry
+-/
+
+-- 𝔽ₚ[X] ⧸ (X² + 1) ≃+* (ℤ ⧸ (p) [X]) / (X² + 1)
+lemma IsImage1 :
+  map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1) =
+  (Equiv1 p) (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) := by
+  rw [Equiv1]
+  simp
+  congr
+  symm
+  simp
+
+lemma IdealEq1 : Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)} =
+  Ideal.map (Equiv1 p) (Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)}) := by
+  rw [Ideal.map_span, Set.image_singleton, IsImage1 p]
+
+lemma Equiv2 : Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
+  Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
+  Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)} :=
+  Ideal.quotientEquiv (Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)})
+    (Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)})
+    (Equiv1 p) (IdealEq1 p)
 
 
 
-def KeyEquivClass : RingEquiv
-  (Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)})
-  (ℤ[i] ⧸ Ideal.span {(p : ℤ[i])}) where
-  toFun := sorry
-  invFun := sorry
-  left_inv := sorry
-  right_inv := sorry
-  map_mul' := sorry
-  map_add' := sorry
+-- # ℤ[i] ⧸ (p) ≃+* ℤ ⧸ (p) [X] ⧸ (X² + 1)
+
+-- first, we prove "as ℤ-algebra, ℤ[i] has a basis {1, i}"
+def BasisFun (x : Fin 2) : ℤ[i] :=
+  if (x = 0) then 1 else { re := 0, im := 1}
+
+lemma LI : LinearIndependent ℤ BasisFun := by
+{
+  apply Fintype.linearIndependent_iff.2
+  intro g hg
+  simp at hg
+  have hsum: ({ re := (g 0), im := (g 1)} : ℤ[i]) = 0 :=
+    calc ({ re := (g 0), im := (g 1)} : ℤ[i])
+      = (g 0) * { re := 1, im := 0} + (g 1) * { re := 0, im := 1} := by simp
+     _= (g 0) * 1 + (g 1) * { re := 0, im := 1} := rfl
+     _= (g 0) * BasisFun 0 + (g 1) * BasisFun 1 := rfl
+     _= 0 := hg
+  rw [Fin.forall_fin_two]
+  constructor
+  · calc g 0 = ({ re := g 0, im := g 1} : ℤ[i]).re := rfl
+      _= (0 : ℤ[i]).re := by rw [hsum]
+      _= 0 := rfl
+  · calc g 1 = ({ re := g 0, im := g 1} : ℤ[i]).im := rfl
+      _= (0 : ℤ[i]).im := by rw [hsum]
+      _= 0 := rfl
+}
+
+lemma SP : ⊤ ≤ Submodule.span ℤ (Set.range BasisFun) := by
+{
+  apply (top_le_span_range_iff_forall_exists_fun ℤ).2
+  intro x
+  simp
+  let c := fun (i : Fin 2) ↦ if (i = 0) then x.re else x.im
+  use c
+  calc (c 0) * BasisFun 0 + (c 1) * BasisFun 1
+    = (c 0) * { re := 1, im := 0} + (c 1) * { re := 0, im := 1} := rfl
+   _= x.re * { re := 1, im := 0} + (c 1) * { re := 0, im := 1} := rfl
+   _= { re := x.re, im := x.im} := by simp
+   _= x := rfl
+}
+
+noncomputable def PB : PowerBasis ℤ ℤ[i] where
+  gen := { re := 0, im := 1}
+  dim := 2
+  basis := Basis.mk LI SP
+  basis_eq_pow := by simp
 
 
+-- now we can use 'PowerBasis.quotientEquivQuotientMinpolyMap'
+lemma Equiv3 : (ℤ[i] ⧸ Ideal.map (algebraMap ℤ ℤ[i]) (Ideal.span {(p : ℤ)})) ≃+*
+  Polynomial (ℤ ⧸ (Ideal.span {(p : ℤ)})) ⧸
+    Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (minpoly ℤ PB.gen)} :=
+  PowerBasis.quotientEquivQuotientMinpolyMap PB (Ideal.span {(p : ℤ)})
 
-theorem KeyEquiv  :
-  Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
-   ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} := by {
+
+-- ℤ[i] ⧸ (p) ≃+* the left hand side of Equiv3
+lemma IdealEq2 : Ideal.span {(p : ℤ[i])} =
+  Ideal.map (algebraMap ℤ ℤ[i]) (Ideal.span {(p : ℤ)}) := by
+  rw [Ideal.map_span, Set.image_singleton]
+  simp
+
+lemma Equiv4 : ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} ≃+*
+  (ℤ[i] ⧸ Ideal.map (algebraMap ℤ ℤ[i]) (Ideal.span {(p : ℤ)})) :=
+  Ideal.quotEquivOfEq (IdealEq2 p)
+
+
+-- the ring hand side of Equiv3 ≃+* ℤ ⧸ (p) [X] ⧸ (X² + 1)
+
+--lemma GaussianInt_IsIntegral : IsIntegral ℤ ℤ[i] := by sorry
+
+lemma MinPoly : minpoly ℤ PB.gen = monomial 2 (1 : ℤ) + C 1 := by
+{
+  rw [minpoly]
   sorry
 }
 
+lemma Equiv5 : Polynomial (ℤ ⧸ (Ideal.span {(p : ℤ)})) ⧸
+  Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (minpoly ℤ PB.gen)} ≃+*
+  Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
+  Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)} := by rw [MinPoly]
 
 
-/- # Part 3 : 𝔽ₚ[X] / (X² + 1) is not a field -/
+-- # Fₚ[X] ⧸ (X² + 1) ≃+* ℤ[i] ⧸ (p)
+theorem KeyEquiv  :
+  Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
+   ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} :=
+   (Equiv2 p).trans ((Equiv4 p).trans ((Equiv3 p).trans (Equiv5 p))).symm
 
 
--- we need to apply '𝔽ₚ is a domain' again and again
-lemma FpIsDomain : IsDomain (ZMod p) := by
-  apply fact_iff.2 at h
-  exact ZMod.instIsDomainZModToSemiringToDivisionSemiringToSemifieldInstFieldZMod p
+
+/- ## Part 3 : 𝔽ₚ[X] / (X² + 1) is not a field -/
 
 
-lemma UnitsIsCyclic : IsCyclic (ZMod p)ˣ := by
-  -- 𝔽ₚ is a domain
-  have : IsDomain (ZMod p) := FpIsDomain p h
-
-  -- 𝔽ₚˣ is finite
-  -- here is some unbearable trouble
-  -- the final theorem require '𝔽ₚˣ is Finite' but in Mathlib, I can only find '𝔽ₚ is Fintype'
-  -- thus I need to provide some trivial conversion between 'Finite' and 'Fintype
-  have : NeZero p := by rw [neZero_iff]; exact Nat.Prime.ne_zero h
-  have : Finite (ZMod p) := by
-    apply Fintype.finite
-    apply ZMod.fintype p
-  have : Finite (ZMod p)ˣ := instFiniteUnits
-
-  -- as to a domain, its Units is a cyclic group w.r.t. multiplication if Units is finite
-  exact instIsCyclicUnitsToMonoidToMonoidWithZeroToSemiringToCommSemiringInstGroupUnits
+lemma UnitsIsCyclic : IsCyclic (ZMod p)ˣ := by infer_instance
 
 
--- 𝔽ₚ does not have nonzero zero divisor since it is a domain
-lemma FpNoZeroDivisor : NoZeroDivisors (ZMod p) := by
-  have hp : IsDomain (ZMod p) := FpIsDomain p h
-  refine IsDomain.to_noZeroDivisors (ZMod p)
+lemma lt_five (x : ℕ) (h : x - 1 < 4) : x < 5 := lt_of_tsub_lt_tsub_right h
 
 
-lemma lt_five (x : ℕ) (h : x - 1 < 4) : x < 5 := by exact lt_of_tsub_lt_tsub_right h
-
-
-lemma not_primeltfive (hmod : p ≡ 1 [MOD 4]) : ¬ p < 5 := by
+-- p is prime and p ≡ 1 [MOD 4] => 'p < 5' should not hold
+lemma Not_pltfive (hmod : p ≡ 1 [MOD 4]) : ¬ p < 5 := by
   by_contra hlt
   interval_cases p
   · exact Nat.not_prime_zero h
@@ -187,27 +249,13 @@ lemma not_primeltfive (hmod : p ≡ 1 [MOD 4]) : ¬ p < 5 := by
   · simp at hmod
 
 
-lemma Fp_mul_inv_cancel : ∀ (a : ZMod p), a ≠ 0 → a * a⁻¹ = 1 := by
-  intro a ha
-  rw [ZMod.mul_inv_eq_gcd]
-  sorry
-
-instance : GroupWithZero (ZMod p) where
-  exists_pair_ne := by
-    rw [← _root_.nontrivial_iff]
-    have : Fact (1 < p) := fact_iff.2 (Nat.Prime.one_lt h)
-    exact ZMod.nontrivial p
-  inv_zero := ZMod.inv_zero p
-  mul_inv_cancel := Fp_mul_inv_cancel p
-
-
 
 -- when the prime satisfies p ≡ 1 [MOD 4], 𝔽ₚ[X]/(X² + 1) isn't a field
 theorem IsNotField (hmod : p ≡ 1 [MOD 4]) :
   ¬ IsField (Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)}) := by {
   -- 𝔽ₚˣ is a cyclic group, let ξ be the generator
   -- 'exists_generator' is a built_in property of Class 'IsCyclic'
-  obtain ⟨ξ,hξ⟩ := (UnitsIsCyclic p h).exists_generator
+  obtain ⟨ξ,hξ⟩ := (UnitsIsCyclic p).exists_generator
 
 
   let n := (p - 1) / 4
@@ -222,35 +270,35 @@ theorem IsNotField (hmod : p ≡ 1 [MOD 4]) :
     apply le_of_lt
     exact Nat.Prime.one_lt h
 
-  -- prove 'ξ ^ (2 * n) = -1' via '(ξ ^ (2 * n)) ^ 2 = 1' but 'ξ ^ (2 * n) ≠ 1'
+  -- from hp2 to hp4, we prove 'ξ ^ (2 * n) = -1' via '(ξ ^ (2 * n)) ^ 2 = 1' but 'ξ ^ (2 * n) ≠ 1'
   have hp2 : ((ξ : ZMod p) ^ (2 * n)) ^ 2 = 1 := by
     calc ((ξ : ZMod p) ^ (2 * n)) ^ 2
        = (ξ : ZMod p) ^ ((2 * n) * 2) := by rw [← pow_mul]
       _= (ξ : ZMod p) ^ (4 * n) := by rw [mul_comm, ← mul_assoc]
       _= 1 := by norm_cast; rw [hp1]; norm_cast
-
-  let hpp := FpNoZeroDivisor p h
   rw [sq_eq_one_iff, or_comm, or_iff_not_imp_left] at hp2
 
+  -- we prove 'ξ ^ (2 * n) ≠ 1' via '2 * n < OrderOf ξ'
   have hp3 : ξ ^ (2 * n) ≠ 1 := by
       apply pow_ne_one_of_lt_orderOf'
       · simp
-        by_contra nhp'
-        rw [Nat.div_eq_zero_iff four_pos] at nhp'
-        apply lt_five at nhp'
-        exact not_primeltfive p h hmod nhp'
-      · have NeZerop : NeZero p := by rw [neZero_iff]; exact Nat.Prime.ne_zero h
-        have FpIsFinType : Fintype (ZMod p) := by exact ZMod.fintype p
-        have FpGroupwithUnits : GroupWithZero (ZMod p) := by exact instGroupWithZeroZMod p h
+        by_contra nhp
+        rw [Nat.div_eq_zero_iff four_pos] at nhp
+        apply lt_five at nhp
+        exact Not_pltfive p h hmod nhp
+
+      · -- we prove 'OrderOf ξ = p - 1' via '|𝔽ₚˣ| = |𝔽ₚ| - 1'
         have CardOfUnits : Fintype.card (ZMod p) = Fintype.card (ZMod p)ˣ + 1 := by
           rw [Fintype.card_eq_card_units_add_one]
-          sorry
         rw [ZMod.card p] at CardOfUnits
         apply Nat.sub_eq_of_eq_add at CardOfUnits
         symm at CardOfUnits
         rw [← orderOf_eq_card_of_forall_mem_zpowers hξ] at CardOfUnits
+
         rw [CardOfUnits]
         simp
+        -- our goal can be simplified to '2 * ((p - 1) / 4) < p - 1'
+
         have hlt : 2 * (p - 1) / 4 < p - 1 := by
           rw [Nat.div_lt_iff_lt_mul', mul_comm (p - 1)]
           apply Nat.mul_lt_mul_of_pos_right
@@ -258,7 +306,9 @@ theorem IsNotField (hmod : p ≡ 1 [MOD 4]) :
           simp
           exact Nat.Prime.one_lt h
           linarith
-        calc 2 * ((p - 1) / 4) ≤ 2 * (p - 1) / 4 := Nat.mul_div_le_mul_div_assoc 2 (p - 1) 4
+
+        calc 2 * ((p - 1) / 4)
+           ≤ 2 * (p - 1) / 4 := Nat.mul_div_le_mul_div_assoc 2 (p - 1) 4
           _< p - 1 := hlt
 
   have hp4 : (ξ : ZMod p) ^ (2 * n) = -1 := by
@@ -275,28 +325,58 @@ theorem IsNotField (hmod : p ≡ 1 [MOD 4]) :
   apply Ideal.IsMaximal.isPrime at hfield
   apply Ideal.IsPrime.mem_or_mem at hfield
 
+
   -- but we have (X - ξ ^ n) * (X + ξ ^ n) = X² + 1
-  have mul_mem : (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n)) * (monomial 1 (1 : (ZMod p)) + C (ξ : ZMod p) ^ n) =
-    monomial 2 (1 : ZMod p) + C (1 : ZMod p) := by
-    calc (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n)) * (monomial 1 (1 : (ZMod p)) + C (ξ : ZMod p) ^ n)
-       = (monomial 1 (1 : (ZMod p))) * (monomial 1 (1 : (ZMod p))) + C (- (ξ : ZMod p) ^ n) * C (ξ : ZMod p) ^ n
-         := by sorry
-      _=  monomial 2 (1 : ZMod p) + C (1 : ZMod p) := by sorry
+  have mul_mem :
+    (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n)) * (monomial 1 (1 : (ZMod p)) + C ((ξ : ZMod p) ^ n)) =
+    monomial 2 (1 : ZMod p) + C (1 : ZMod p) := by ring; simp; ring; rw [mul_comm, ← RingHom.map_pow, hp4] ; simp
 
   have self_mem : (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) ∈ (Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)}) :=
     Ideal.mem_span_singleton_self (monomial 2 (1 : ZMod p) + C (1 : ZMod p))
   nth_rewrite 1 [← mul_mem] at self_mem
 
-  -- but X - ξ ^ n , X + ξ ^ n ∉ (X² + 1) via analysing polynomial degree
+
+  -- in addition, 'X - ξ ^ n , X + ξ ^ n ∉ (X² + 1)' via analysing polynomial degree
   specialize hfield self_mem
   obtain hl|hr := hfield
-  · sorry
-  · sorry
+
+
+  · rw [Ideal.mem_span_singleton] at hl
+    have hl0 : natDegree ((monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n))) = 1 := by compute_degree; norm_num
+    have hl1 : (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n)) ≠ 0 := by
+      by_contra hpp
+      rw [hpp] at hl0
+      simp at hl0
+
+    apply (Polynomial.degree_le_of_dvd hl) at hl1
+    have hl2 : degree (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n)) < degree (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) :=
+      calc degree (monomial 1 (1 : (ZMod p)) + C (- (ξ : ZMod p) ^ n))
+        = 1 := by compute_degree; norm_num
+       _< 2 := by simp
+       _= degree (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) := by symm; compute_degree; norm_num
+    apply lt_iff_not_le.1 at hl2
+    contradiction
+
+  · rw [Ideal.mem_span_singleton] at hr
+    have hr0 : natDegree ((monomial 1 (1 : (ZMod p)) + C ((ξ : ZMod p) ^ n))) = 1 := by compute_degree; norm_num
+    have hr1 : (monomial 1 (1 : (ZMod p)) + C ((ξ : ZMod p) ^ n)) ≠ 0 := by
+      by_contra hpp
+      rw [hpp] at hr0
+      simp at hr0
+
+    apply (Polynomial.degree_le_of_dvd hr) at hr1
+    have hr3 : degree (monomial 1 (1 : (ZMod p)) + C ((ξ : ZMod p) ^ n)) < degree (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) :=
+      calc degree (monomial 1 (1 : (ZMod p)) + C ((ξ : ZMod p) ^ n))
+        = 1 := by compute_degree; simp
+       _< 2 := by simp
+       _= degree (monomial 2 (1 : ZMod p) + C (1 : ZMod p)) := by symm; compute_degree; norm_num
+    apply lt_iff_not_le.1 at hr3
+    contradiction
 }
 
 
 
-/- # Part 4 : Fermat's Theorem on sums of two squares -/
+/- ## Part 4 : Fermat's Theorem on sums of two squares -/
 
 
 theorem Fermat_on_sums_of_two_squares :
@@ -478,3 +558,66 @@ theorem Fermat_on_sums_of_two_squares :
 
         contradiction
 }
+
+
+
+
+/-
+-- (ℤ ⧸ (p) [X]) / (X² + 1) ≃+* (ℤ[X] ⧸ (p)) ⧸ (X² + 1)
+
+noncomputable def Equiv3 : Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ≃+* Polynomial ℤ ⧸ Ideal.map C (Ideal.span {(p : ℤ)}) :=
+  Ideal.polynomialQuotientEquivQuotientPolynomial (Ideal.span {(p : ℤ)})
+
+lemma IsImage1 :
+  Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) =
+  Ideal.map (Equiv3 p) (Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)}) := by
+  rw [Ideal.map_span (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))),
+      Ideal.map_span (Equiv3 p)]
+  rw [Set.image_singleton , Set.image_singleton , Equiv3]
+  rw [Ideal.polynomialQuotientEquivQuotientPolynomial_map_mk (Ideal.span {(p : ℤ)}) (monomial 2 (1 : ℤ) + C 1)]
+
+lemma Equiv4 : Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
+  Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)} ≃+*
+  (Polynomial ℤ ⧸ Ideal.map C (Ideal.span {(p : ℤ)})) ⧸
+  Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) :=
+  Ideal.quotientEquiv (Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)})
+  (Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}))
+  (Equiv3 p) (IsImage1 p)
+
+
+-- 𝔽ₚ[X] ⧸ (X² + 1) ≃+* (ℤ[X] ⧸ (p)) ⧸ (X² + 1)
+lemma Equiv6 : Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
+  (Polynomial ℤ ⧸ Ideal.span {C (p : ℤ)}) ⧸
+  Ideal.map (Ideal.Quotient.mk (Ideal.span {C (p : ℤ)})) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) :=
+  (Equiv2 p).trans (Equiv3 p)
+-/
+
+
+
+/-
+-- (ℤ[X] ⧸ (p)) ⧸ (X² + 1) ≃+* (ℤ[X] ⧸ (X² + 1)) ⧸ (p)
+lemma Equiv4 : (Polynomial ℤ ⧸ Ideal.span {C (p : ℤ)}) ⧸
+  Ideal.map (Ideal.Quotient.mk (Ideal.span {C (p : ℤ)})) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) ≃+*
+  (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ⧸
+  Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}) :=
+  DoubleQuot.quotQuotEquivComm (Ideal.span {C (p : ℤ)}) (Ideal.span {monomial 2 (1 : ℤ) + C 1})
+
+
+-- (ℤ[X] ⧸ (X² + 1)) ⧸ (p) ≃+* ℤ[i] ⧸ (p)
+lemma Equiv5 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ≃+* ℤ[i] := by sorry
+
+lemma IsImage2 : Ideal.span {(p : ℤ[i])} =
+  Ideal.map (Equiv5 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) →+* ℤ[i])
+  (Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)})) := by
+  ext x
+  constructor
+  · intro hx
+    sorry
+  sorry
+
+lemma Equiv6 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ⧸
+  Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}) ≃+*
+  ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} :=
+  Ideal.quotientEquiv (Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}))
+    (Ideal.span {(p : ℤ[i])}) Equiv5 (IsImage2 p)
+-/
