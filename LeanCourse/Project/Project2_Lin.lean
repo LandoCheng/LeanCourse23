@@ -8,6 +8,7 @@ import Mathlib.Order.Ideal
 import Mathlib.Data.Polynomial.Basic
 import Mathlib.Data.Nat.Order.Lemmas
 import Mathlib.Tactic.ComputeDegree
+import Mathlib.FieldTheory.Minpoly.Basic
 
 
 open Nat.ModEq GaussianInt Zsqrtd Complex Polynomial
@@ -110,11 +111,6 @@ lemma negone_le_zero : -1 ≤ 0 := by simp
 noncomputable def Equiv1 : Polynomial (ZMod p) ≃+* Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) :=
   Polynomial.mapEquiv (RingEquiv.symm (Int.quotientSpanNatEquivZMod p))
 
-/-
-lemma Equiv2 : Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
-  Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
-  Ideal.span {monomial 2 (1 : ℤ ⧸ Ideal.span {(p : ℤ)}) + C (1 : ℤ ⧸ Ideal.span {(p : ℤ)})} := by sorry
--/
 
 -- 𝔽ₚ[X] ⧸ (X² + 1) ≃+* (ℤ ⧸ (p) [X]) / (X² + 1)
 lemma IsImage1 :
@@ -205,16 +201,51 @@ lemma Equiv4 : ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} ≃+*
   Ideal.quotEquivOfEq (IdealEq2 p)
 
 
--- the ring hand side of Equiv3 ≃+* ℤ ⧸ (p) [X] ⧸ (X² + 1)
+-- the minimal polynomial of i w.r.t. ℤ → ℤ[i] is exactly 'X² + 1'
+lemma Degree_Is_Two : natDegree (monomial 2 (1 : ℤ) + C 1) = 2 := by compute_degree; simp
 
---lemma GaussianInt_IsIntegral : IsIntegral ℤ ℤ[i] := by sorry
+lemma HM : Polynomial.Monic (monomial 2 (1 : ℤ) + C 1) := by
+  rw [Polynomial.Monic.def, leadingCoeff]
+  calc coeff (monomial 2 (1 : ℤ) + C 1) (natDegree (monomial 2 (1 : ℤ) + C 1))
+    = coeff (monomial 2 (1 : ℤ) + C 1) 2 := by rw [Degree_Is_Two]
+   _= coeff (monomial 2 (1 : ℤ)) 2 + coeff (C 1) 2 := by simp
+   _= 1 + 0 := by rw [← Polynomial.X_pow_eq_monomial]; simp; rw [Polynomial.coeff_one]; simp
+   _= 1 := by norm_num
+
+lemma HP : (Polynomial.aeval ({ re := 0, im := 1} : ℤ[i]) ) (monomial 2 (1 : ℤ) + C 1) = 0 := by simp
+
+lemma INT : IsIntegral ℤ ({ re := 0, im := 1} : ℤ[i]) := by
+  rw [IsIntegral, RingHom.IsIntegralElem]
+  use (monomial 2 (1 : ℤ) + C 1)
+  constructor
+  · exact HM
+  · simp
+
+lemma HL : ∀ (q : Polynomial ℤ), Polynomial.degree q < Polynomial.degree (monomial 2 (1 : ℤ) + C 1) →
+  q = 0 ∨ (Polynomial.aeval ({ re := 0, im := 1} : ℤ[i])) q ≠ 0 := by
+  intro q hq
+  have lt_two : degree q < 2 :=
+    calc degree q < degree (monomial 2 (1 : ℤ) + C 1) := hq
+     _= 2 := by compute_degree; simp
+
+  by_contra nhq
+  push_neg at nhq
+  obtain ⟨ hl,hr ⟩ := nhq
+  apply (PowerBasis.dim_le_degree_of_root PB hl) at hr
+  have : (2 : WithBot ℕ) < 2 :=
+    calc 2 = (PB.dim : WithBot ℕ) := by simp
+     _≤ degree q := hr
+     _< 2 := lt_two
+  simp at this
 
 lemma MinPoly : minpoly ℤ PB.gen = monomial 2 (1 : ℤ) + C 1 := by
 {
-  rw [minpoly]
-  sorry
+  symm
+  exact minpoly.unique' ℤ ({ re := 0, im := 1} : ℤ[i]) HM HP HL
 }
 
+
+-- the ring hand side of Equiv3 ≃+* ℤ ⧸ (p) [X] ⧸ (X² + 1)
 lemma Equiv5 : Polynomial (ℤ ⧸ (Ideal.span {(p : ℤ)})) ⧸
   Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (minpoly ℤ PB.gen)} ≃+*
   Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
@@ -558,66 +589,3 @@ theorem Fermat_on_sums_of_two_squares :
 
         contradiction
 }
-
-
-
-
-/-
--- (ℤ ⧸ (p) [X]) / (X² + 1) ≃+* (ℤ[X] ⧸ (p)) ⧸ (X² + 1)
-
-noncomputable def Equiv3 : Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ≃+* Polynomial ℤ ⧸ Ideal.map C (Ideal.span {(p : ℤ)}) :=
-  Ideal.polynomialQuotientEquivQuotientPolynomial (Ideal.span {(p : ℤ)})
-
-lemma IsImage1 :
-  Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) =
-  Ideal.map (Equiv3 p) (Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)}) := by
-  rw [Ideal.map_span (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))),
-      Ideal.map_span (Equiv3 p)]
-  rw [Set.image_singleton , Set.image_singleton , Equiv3]
-  rw [Ideal.polynomialQuotientEquivQuotientPolynomial_map_mk (Ideal.span {(p : ℤ)}) (monomial 2 (1 : ℤ) + C 1)]
-
-lemma Equiv4 : Polynomial (ℤ ⧸ Ideal.span {(p : ℤ)}) ⧸
-  Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)} ≃+*
-  (Polynomial ℤ ⧸ Ideal.map C (Ideal.span {(p : ℤ)})) ⧸
-  Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) :=
-  Ideal.quotientEquiv (Ideal.span {map (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) (monomial 2 (1 : ℤ) + C 1)})
-  (Ideal.map (Ideal.Quotient.mk (Ideal.map C (Ideal.span {(p : ℤ)}))) (Ideal.span {monomial 2 (1 : ℤ) + C 1}))
-  (Equiv3 p) (IsImage1 p)
-
-
--- 𝔽ₚ[X] ⧸ (X² + 1) ≃+* (ℤ[X] ⧸ (p)) ⧸ (X² + 1)
-lemma Equiv6 : Polynomial (ZMod p) ⧸ Ideal.span {monomial 2 (1 : ZMod p) + C (1 : ZMod p)} ≃+*
-  (Polynomial ℤ ⧸ Ideal.span {C (p : ℤ)}) ⧸
-  Ideal.map (Ideal.Quotient.mk (Ideal.span {C (p : ℤ)})) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) :=
-  (Equiv2 p).trans (Equiv3 p)
--/
-
-
-
-/-
--- (ℤ[X] ⧸ (p)) ⧸ (X² + 1) ≃+* (ℤ[X] ⧸ (X² + 1)) ⧸ (p)
-lemma Equiv4 : (Polynomial ℤ ⧸ Ideal.span {C (p : ℤ)}) ⧸
-  Ideal.map (Ideal.Quotient.mk (Ideal.span {C (p : ℤ)})) (Ideal.span {monomial 2 (1 : ℤ) + C 1}) ≃+*
-  (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ⧸
-  Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}) :=
-  DoubleQuot.quotQuotEquivComm (Ideal.span {C (p : ℤ)}) (Ideal.span {monomial 2 (1 : ℤ) + C 1})
-
-
--- (ℤ[X] ⧸ (X² + 1)) ⧸ (p) ≃+* ℤ[i] ⧸ (p)
-lemma Equiv5 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ≃+* ℤ[i] := by sorry
-
-lemma IsImage2 : Ideal.span {(p : ℤ[i])} =
-  Ideal.map (Equiv5 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) →+* ℤ[i])
-  (Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)})) := by
-  ext x
-  constructor
-  · intro hx
-    sorry
-  sorry
-
-lemma Equiv6 : (Polynomial ℤ ⧸ Ideal.span {monomial 2 (1 : ℤ) + C 1}) ⧸
-  Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}) ≃+*
-  ℤ[i] ⧸ Ideal.span {(p : ℤ[i])} :=
-  Ideal.quotientEquiv (Ideal.map (Ideal.Quotient.mk (Ideal.span {monomial 2 (1 : ℤ) + C 1})) (Ideal.span {C (p : ℤ)}))
-    (Ideal.span {(p : ℤ[i])}) Equiv5 (IsImage2 p)
--/
